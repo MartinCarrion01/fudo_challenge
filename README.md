@@ -3,6 +3,8 @@
 
 Aplicación que permite crear y listar productos. Dichos productos son creados de manera asíncrona. Por lo que también cuenta con funcionalidades para consultar el estado de la creación de dichos productos.
 
+Esta aplicación fue desarrollada con Ruby, Rack y SQLite3 para la persistencia.
+
 # Índice
 - Documentación
   - [Fudo](docs/fudo.md)
