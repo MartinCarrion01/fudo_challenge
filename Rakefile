@@ -6,7 +6,7 @@ namespace :db do
   desc 'Create FudoChallenge database'
   task :create do
     puts 'Creating database. Please wait.'
-    db_file = 'db/fudochallenge.sqlite3'
+    db_file = ENV.fetch('DATABASE_FILE_PATH', 'db/fudochallenge.sqlite3')
     if File.exist?(db_file)
       puts "Database already exists. Look for #{db_file} file. Exiting..."
     else
@@ -18,7 +18,7 @@ namespace :db do
   desc 'Drop FudoChallenge database'
   task :drop do
     puts 'Creating database. Please wait.'
-    db_file = 'db/fudochallenge.sqlite3'
+    db_file = ENV.fetch('DATABASE_FILE_PATH', 'db/fudochallenge.sqlite3')
     if File.exist?(db_file)
       File.open(db_file, 'r') { |file| File.delete(file) }
       puts 'Dropped database succesfully. Exiting...'

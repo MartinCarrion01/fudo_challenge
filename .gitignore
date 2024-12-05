@@ -1,4 +1,4 @@
 .rubocop.yml
 .env
 .byebug_history
-db/fudochallenge.sqlite3
+./db/fudochallenge.sqlite3
