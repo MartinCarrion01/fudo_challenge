@@ -1,0 +1,422 @@
+openapi: 3.1.0
+info:
+  title: Fudo Challenge - Products API V1
+  description: V1 de API para poder crear y listar productos para un negocio gastronómico.
+  contact:
+    name: Martin Fernando Carrion
+    email: martincarrion2864212@gmail.com
+  version: 1.0.0
+
+servers:
+  - url: http://0.0.0.0:5000/api/v1
+    description: Servidor de desarrollo local
+
+components:
+  securitySchemes:
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+
+    Product:
+      type: object
+      required:
+        - name
+        - price
+        - category
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          minLength: 3
+          maxLength: 100
+
+    CreateProductRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 100
+
+    CreateProductValidationErrors:
+      type: object
+      properties:
+        name:
+          type: array
+          items:
+            type: string
+
+    CreateProductResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        job_id:
+          type: integer
+
+    Job:
+      type: object
+      properties:
+        name:
+          type: string
+        created_at:
+          type: string
+          format: date
+        state:
+          type: string
+          enum:
+            - pending
+            - success
+            - error
+        payload:
+          $ref: '#/components/schemas/CreateProductRequest'
+        result:
+          oneOf:
+            - $ref: '#/components/schemas/Product'
+            - $ref: '#/components/schemas/ErrorMessage'
+
+    ErrorMessage:
+      type: object
+      properties:
+        message:
+          type: string
+
+security:
+  - tokenAuth: []
+
+tags:
+  - name: Auth
+    description: Operaciones para autenticarse en la API
+  - name: Productos
+    description: Operaciones para listar, detallar y encolar la creación de productos.
+  - name: Jobs
+    description: Operaciones para listar y detallar Jobs para la creación de productos de manera asíncrona.
+
+paths:
+  /auth/login:
+    post:
+      summary: Login de la API
+      tags:
+        - Auth
+      description: Generar token de autenticación para operar la API
+      security:
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              username: 'fudochallenge'
+              password: '12345678'
+      responses:
+        '200':
+          description: Logeado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              example:
+                token: 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzM0MTk2MTF9.Ut3d5HShuYUBPJyFmmugUA3H9YXbMMz2OyrTIZnKNtQ'
+        '401':
+          description: Error de login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              example:
+                message: 'Invalid credentials'
+
+  /products:
+    get:
+      summary: Listar productos
+      tags:
+        - Productos
+      description: Obtener una lista de productos
+      responses:
+        '200':
+          description: Lista de productos obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+              examples:
+                example:
+                  value:
+                    - id: 1
+                      name: Lomo con papas fritas
+                    - id: 2
+                      name: Shawarma de cordero
+        '401':
+          description: Error de autenticación de token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                authorization header missing:
+                  value:
+                    message: 'Authorization token missing'
+                token expired:
+                  value:
+                    message: 'Token has expired'
+                decode error:
+                  value:
+                    message: 'Invalid token'
+                user not found:
+                  value:
+                    message: 'User not found with given token'
+
+    post:
+      summary: Crear nuevo producto
+      tags:
+        - Productos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+            example:
+              name: 'Pancho con poncho'
+      responses:
+        '200':
+          description: Producto encolado para su creación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateProductResponse'
+              example:
+                message: 'Processing product...'
+                job_id: 1
+        '422':
+          description: Error de validación al crear producto
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateProductValidationErrors'
+              examples:
+                name too short:
+                  value:
+                    name:
+                      - 'is too short or too long'
+                name missing:
+                  value:
+                    name:
+                      - 'is not present'
+                      - 'is too short or too long'
+        '401':
+          description: Error de autenticación de token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                authorization header missing:
+                  value:
+                    message: 'Authorization token missing'
+                token expired:
+                  value:
+                    message: 'Token has expired'
+                decode error:
+                  value:
+                    message: 'Invalid token'
+                user not found:
+                  value:
+                    message: 'User not found with given token'
+
+  /products/{product_id}:
+    get:
+      summary: Obtener detalles de un producto
+      tags:
+        - Productos
+      parameters:
+        - in: path
+          name: product_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalles del producto obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+              example:
+                id: 1
+                name: 'Lomo con papas fritas'
+        '404':
+          description: Producto no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              example:
+                message: 'Product not found'
+        '401':
+          description: Error de autenticación de token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                authorization header missing:
+                  value:
+                    message: 'Authorization token missing'
+                token expired:
+                  value:
+                    message: 'Token has expired'
+                decode error:
+                  value:
+                    message: 'Invalid token'
+                user not found:
+                  value:
+                    message: 'User not found with given token'
+
+  /jobs:
+    get:
+      summary: Listar productos
+      tags:
+        - Jobs
+      description: Obtener una lista de Jobs
+      responses:
+        '200':
+          description: Lista de Jobs obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Job'
+              examples:
+                example:
+                  value:
+                    - id: 1
+                      state: 'success'
+                      created_at: '2024-12-04 14:46:00 -0300'
+                      payload: "{\"name\":\"Hamburguesa triple\"}"
+                      result: "{\"product\":{\"id\":1,\"name\":\"Hamburguesa triple\"}}"
+                    - id: 2
+                      state: 'error'
+                      created_at: '2024-12-04 14:46:00 -0300'
+                      payload: "{\"name\":\"Pizza napolitana\"}"
+                      result: "{\"message\":\"Create product failed\"}"
+                    - id: 3
+                      state: 'pending'
+                      created_at: '2024-12-04 14:46:00 -0300'
+                      payload: "{\"name\":\"Barroluco de pollo\"}"
+                      result: null
+        '401':
+          description: Error de autenticación de token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                authorization header missing:
+                  value:
+                    message: 'Authorization token missing'
+                token expired:
+                  value:
+                    message: 'Token has expired'
+                decode error:
+                  value:
+                    message: 'Invalid token'
+                user not found:
+                  value:
+                    message: 'User not found with given token'
+
+  /jobs/{job_id}:
+    get:
+      summary: Obtener detalles de un Job para la creación de un producto
+      tags:
+        - Jobs
+      parameters:
+        - in: path
+          name: job_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Detalles del Job obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+              examples:
+                success:
+                  value:
+                    id: 1
+                    state: 'success'
+                    created_at: '2024-12-04 14:46:00 -0300'
+                    payload: "{\"name\":\"Hamburguesa triple\"}"
+                    result: "{\"product\":{\"id\":1,\"name\":\"Hamburguesa triple\"}}"
+                error:
+                  value:
+                    id: 2
+                    state: 'error'
+                    created_at: '2024-12-04 14:46:00 -0300'
+                    payload: "{\"name\":\"Pizza napolitana\"}"
+                    result: "{\"message\":\"Create product failed\"}"
+                pending:
+                  value:
+                    id: 3
+                    state: 'pending'
+                    created_at: '2024-12-04 14:46:00 -0300'
+                    payload: "{\"name\":\"Barroluco de pollo\"}"
+                    result: null
+        '404':
+          description: Job no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              example:
+                message: 'Job not found'
+        '401':
+          description: Error de autenticación de token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                authorization header missing:
+                  value:
+                    message: 'Authorization token missing'
+                token expired:
+                  value:
+                    message: 'Token has expired'
+                decode error:
+                  value:
+                    message: 'Invalid token'
+                user not found:
+                  value:
+                    message: 'User not found with given token'
