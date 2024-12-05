@@ -6,7 +6,7 @@ class Route
     @controller_path = options[:controller_path]
     @action = options[:action]
     @dynamic_params = dynamic_params
-    require File.join(File.dirname(__FILE__), '../', 'app', 'controllers', "#{@controller_path}_controller")
+    require_relative "../app/controllers/#{@controller_path}_controller"
   end
 
   def parse_controller_path

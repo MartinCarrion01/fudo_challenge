@@ -1,4 +1,4 @@
-require File.join(File.dirname(__FILE__), '../../', 'application_controller')
+require_relative '../../application_controller'
 require_relative '../../../models/product'
 
 module Api

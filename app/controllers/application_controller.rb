@@ -1,8 +1,8 @@
 require 'rack'
 require 'json'
-require_relative '../../lib/jwt_utils'
-require_relative '../../config/exception'
 require_relative '../models/user'
+require_relative '../../config/exception'
+require_relative '../../lib/jwt_utils'
 
 class ApplicationController
   attr_accessor :request, :response, :params

@@ -11,7 +11,9 @@ class Product < Sequel::Model
 
   def create_async
     job = Job.create(payload: { name: }.to_json)
+    return if job.nil?
+
     Thread.new { job.perform }
-    job&.id
+    job.id
   end
 end

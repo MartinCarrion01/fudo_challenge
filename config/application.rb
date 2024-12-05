@@ -11,7 +11,7 @@ module FudoChallenge
       if route
         route.call(env)
       else
-        [404, {}, []]
+        [404, {}, ['Resource not found']]
       end
     end
   end
